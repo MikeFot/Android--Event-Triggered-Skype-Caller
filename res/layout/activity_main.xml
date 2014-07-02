@@ -1,0 +1,77 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/textViewToggleNFC"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="${packageName}.${activityClass}" >
+
+    <Button
+        android:id="@+id/buttonRegisterContact"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickRegisterContact"
+        android:text="@string/button_text_register_contact" />
+
+    <TextView
+        android:id="@+id/textViewNFCToggleLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/label_toggle_nfc_scanning"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <ToggleButton
+        android:id="@+id/toggleButtonNFC"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickToggleNFC"
+        android:text="@string/label_nfc_toggle_button" />
+
+    <ProgressBar
+        android:id="@+id/progressBarNFC"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="invisible" />
+
+    <TextView
+        android:id="@+id/textViewIBeaconToggleLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/label_toggle_ibeacon_scanning"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <ToggleButton
+        android:id="@+id/toggleButtonIBeacon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickToggleIBeacon"
+        android:text="@string/label_ibeacon_toggle_button" />
+
+    <ProgressBar
+        android:id="@+id/progressBarIBeacon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="invisible" />
+
+    <TextView
+        android:id="@+id/textViewBlueToothSensitivity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/label_bluetooth_sensitivity"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <SeekBar
+        android:id="@+id/seekBarSensitivity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="30dp"
+        android:paddingRight="30dp" />
+
+</LinearLayout>

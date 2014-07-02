@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="array_actions">
+        <item>Call</item>
+        <item>Video Call</item>
+        <item>Chat</item>
+        <item>Prompt User</item>
+    </string-array>
+    <string-array name="array_dialog_actions">
+        <item>Call</item>
+        <item>Video Call</item>
+        <item>Chat</item>
+    </string-array>
+    <string-array name="array_devices">
+        <item>NFC Tag</item>
+        <item>IBeacon</item>
+    </string-array>
+
+</resources>

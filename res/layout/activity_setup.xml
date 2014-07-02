@@ -1,0 +1,54 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="${packageName}.${activityClass}" >
+
+    <TextView
+        android:id="@+id/textViewSetupWho"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/label_setup_who"
+        android:textAppearance="?android:attr/textAppearance" />
+
+    <Button
+        android:id="@+id/buttonSetupContact"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickSetupContact"
+        android:text="@string/label_button_setup_contact" />
+
+    <TextView
+        android:id="@+id/textViewSetupDevice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/label_setup_with_what"
+        android:textAppearance="?android:attr/textAppearance" />
+
+    <Button
+        android:id="@+id/buttonStartDeviceSync"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickSetupDevice"
+        android:text="@string/label_button_setup_device" />
+
+    <Spinner
+        android:id="@+id/spinnerSelectAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/buttonCommitChoices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickCommitSetup"
+        android:text="@string/label_button_commit_choices" />
+
+</LinearLayout>
