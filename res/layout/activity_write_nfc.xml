@@ -16,15 +16,4 @@
         android:layout_alignParentRight="true"
         android:text="@string/textview_label_write_nfc_activity" />
 
-    <Button
-        android:id="@+id/buttonCommitGDrive"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
-        android:enabled="false"
-        android:onClick="onCommitButtonClick"
-        android:text="@string/button_label_commit_to_google_drive" />
-
 </RelativeLayout>

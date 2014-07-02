@@ -13,7 +13,11 @@ import android.view.ViewGroup;
 import com.michaelfotiadis.eventtriggeredskypecaller.R;
 import com.michaelfotiadis.eventtriggeredskypecaller.utils.Logger;
 import com.michaelfotiadis.eventtriggeredskypecaller.utils.ToastUtils;
-
+/**
+ * BaseActivity for NFC
+ * @author Michael Fotiadis
+ *
+ */
 public class SensorBaseActivity extends FragmentActivity {
 
 	private final String TAG = "Sensor Base Activity";

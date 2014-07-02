@@ -16,7 +16,6 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
-import android.widget.TextView;
 
 import com.github.johnpersano.supertoasts.SuperActivityToast;
 import com.michaelfotiadis.eventtriggeredskypecaller.R;
@@ -35,24 +34,24 @@ public class BluetoothLEActivity extends FragmentActivity {
 			Logger.d(TAG, "On Receiver Result");
 			if (intent.getAction().equalsIgnoreCase(
 					CustomConstants.Broadcasts.BROADCAST_1.getString())) {
-				Logger.i(TAG, "Scan Timed Out");
+				removeReceivers();
 				onPostScan();
 			}
 		}
 	}
 
+	// BlueTooth Fields
 	private BluetoothLeDeviceStore mDeviceStore;
 	private BluetoothLeScanner mScanner;
 	private BluetoothUtils mBluetoothUtils;
 
-	private TextView reportTextView;
-	private IBeaconDevice mClosestDevice;
+	// Scan Variables
 	private int mCountScans = 0;
 	private Long mScanStartTime = null;
-
 	private Long mScanDuration = null;
-	private final int TARGET_SCAN_DURATION = 5000;
 
+	// Scan Final Fields
+	private final int TARGET_SCAN_DURATION = 5000;
 	private final int TARGET_COUNT_SCANS_FALLBACK = 200;
 
 	private final String TAG = "IBEACON_BLUETOOTH";
@@ -81,9 +80,11 @@ public class BluetoothLEActivity extends FragmentActivity {
 							- mScanStartTime;
 					Logger.i(TAG, "Scan Duration : " + mScanDuration.toString());
 
-					addTextToTextView(reportTextView, "Scan Time "
-							+ mScanDuration.toString() + ". Performed  "
-							+ mCountScans + " scans.");
+					/*
+					 * addTextToTextView(reportTextView, "Scan Time " +
+					 * mScanDuration.toString() + ". Performed  " + mCountScans
+					 * + " scans.");
+					 */
 
 					if ((mScanDuration >= TARGET_SCAN_DURATION || mCountScans >= TARGET_COUNT_SCANS_FALLBACK)
 							&& mDeviceStore.getDeviceList().size() >= 1) {
@@ -97,55 +98,26 @@ public class BluetoothLEActivity extends FragmentActivity {
 
 	private ResponseReceiver mReceiver;
 
-	private void addTextToTextView(TextView tv, String text) {
-		if (tv.getLineCount() > 20) {
-			tv.setText("");
-		} else {
-			tv.append("\n");
-		}
-		tv.append(text);
-	}
-
-	/*
-	public boolean canIDoSomethingWithDevice(BluetoothLeDevice evaluatedDevice) {
-		if (!IBeaconUtils.isThisAnIBeacon(evaluatedDevice)) {
-			return false;
-		}
-		IBeaconDevice device = new IBeaconDevice(evaluatedDevice);
-		IBeaconDistanceDescriptor distanceDescriptor = device
-				.getDistanceDescriptor();
-
-		if (distanceDescriptor == IBeaconDistanceDescriptor.IMMEDIATE) {
-			addTextToTextView(reportTextView, "Found Immediate Device "
-					+ device.getUUID());
-			Logger.i(TAG, "Found Immediate Device " + device.getUUID());
-			mClosestDevice = device;
-			return true;
-		} else {
-			addTextToTextView(reportTextView, "Found a distant Device "
-					+ device.getUUID() + " which is " + distanceDescriptor);
-			Logger.i(TAG, "Found a distant Device " + device.getUUID()
-					+ " which is " + distanceDescriptor);
-		}
-		return false;
-	}
-	*/
-
 	public void initialiseBluetoothScan() {
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				mBluetoothUtils.askUserToEnableBluetoothIfNeeded();
-				mCountScans = 0;
-
-				mScanStartTime = Calendar.getInstance().getTimeInMillis();
-				Logger.i(TAG, "Start Time is " + mScanStartTime);
-				mDeviceStore.clear();
-
 				if (mBluetoothUtils.isBluetoothOn()
 						&& mBluetoothUtils.isBluetoothLeSupported()) {
-					Logger.i(TAG, "Starting Scan");
-					mScanner.scanLeDevice(TARGET_SCAN_DURATION, true);
+					mCountScans = 0;
+
+					mScanStartTime = Calendar.getInstance().getTimeInMillis();
+					Logger.i(TAG, "Start Time is " + mScanStartTime);
+					mDeviceStore.clear();
+
+					if (mBluetoothUtils.isBluetoothOn()
+							&& mBluetoothUtils.isBluetoothLeSupported()) {
+						Logger.i(TAG, "Starting Scan");
+						mScanner.scanLeDevice(TARGET_SCAN_DURATION, true);
+					}
+				} else {
+					sendResult(null);
 				}
 			}
 		});
@@ -155,8 +127,6 @@ public class BluetoothLEActivity extends FragmentActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_bluetooth_le);
-		reportTextView = (TextView) findViewById(R.id.textViewBluetoothReport);
-		reportTextView.setText("Starting Scan");
 		startScan();
 	}
 
@@ -178,35 +148,12 @@ public class BluetoothLEActivity extends FragmentActivity {
 		if (mDeviceStore.getDeviceList() != null
 				&& mDeviceStore.getDeviceList().size() > 0) {
 
-			addTextToTextView(reportTextView, " Devices found "
-					+ mDeviceStore.getDeviceList().size());
-			for (BluetoothLeDevice d : mDeviceStore.getDeviceList()) {
-				if (IBeaconUtils.isThisAnIBeacon(d)) {
-					IBeaconDevice iDevice = new IBeaconDevice(d);
-					addTextToTextView(
-							reportTextView,
-							iDevice.getDevice().getAddress() + " "
-									+ iDevice.getRunningAverageRssi());
-				}
-			}
-			mClosestDevice = new IBeaconDevice(mDeviceStore.getDeviceList()
-					.get(0));
-			addTextToTextView(reportTextView, "The closest beacon is "
-					+ mClosestDevice.getDevice().getAddress());
-			addTextToTextView(reportTextView, "Distance Descriptor is "
-					+ mClosestDevice.getDistanceDescriptor());
-
-			CustomConstants.CLOSEST_DEVICE = mClosestDevice.getDevice()
-					.getAddress();
-
-			ToastUtils.makeInfoToast(this, "Device Detected");
 			showChoiceDialog();
 
 		} else {
-			addTextToTextView(reportTextView, "No LE Devices Found");
 			Logger.d(TAG, "No LE Devices Found");
-
 			ToastUtils.makeInfoToast(this, "No Devices Found");
+			startScan();
 		}
 	}
 
@@ -225,7 +172,9 @@ public class BluetoothLEActivity extends FragmentActivity {
 
 	/**
 	 * Method which broadcasts the activity result
-	 * @param result String value of the result
+	 * 
+	 * @param result
+	 *            String value of the result
 	 */
 	private void sendResult(String result) {
 		Logger.d(TAG, "Sending Result: " + result);
@@ -237,6 +186,7 @@ public class BluetoothLEActivity extends FragmentActivity {
 		} else {
 			setResult(RESULT_OK, returnIntent);
 		}
+
 		finish();
 	}
 
@@ -250,7 +200,9 @@ public class BluetoothLEActivity extends FragmentActivity {
 		// Generate the selection string
 		for (BluetoothLeDevice d : mDeviceStore.getDeviceList()) {
 			iDevice = new IBeaconDevice(d);
-			results[i] = "Device ID: " + iDevice.getDevice().getAddress()
+			results[i] = "Device Name: " + iDevice.getName()
+					+ CustomConstants.LINE_SEPARATOR + "Device ID: "
+					+ iDevice.getDevice().getAddress()
 					+ CustomConstants.LINE_SEPARATOR + "Signal Strength: "
 					+ iDevice.getRunningAverageRssi()
 					+ CustomConstants.LINE_SEPARATOR + "Distance Descriptor: "
@@ -284,8 +236,6 @@ public class BluetoothLEActivity extends FragmentActivity {
 	}
 
 	protected void startScan() {
-		reportTextView.setText("Starting Scan");
-
 		Logger.i(TAG, "Registering the Broadcast Receiver");
 
 		IntentFilter mIntentFilter = new IntentFilter(
@@ -298,7 +248,8 @@ public class BluetoothLEActivity extends FragmentActivity {
 
 		mDeviceStore = new BluetoothLeDeviceStore();
 		mBluetoothUtils = new BluetoothUtils(this);
-		mScanner = new BluetoothLeScanner(this, mLeScanCallback, mBluetoothUtils);
+		mScanner = new BluetoothLeScanner(this, mLeScanCallback,
+				mBluetoothUtils);
 		mSuperActivityToast = ToastUtils.makeProgressToast(this,
 				mSuperActivityToast, "Scanning...");
 		initialiseBluetoothScan();

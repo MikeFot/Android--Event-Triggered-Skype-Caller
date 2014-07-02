@@ -10,6 +10,7 @@ import org.ndeftools.externaltype.AndroidApplicationRecord;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -27,9 +28,10 @@ import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
+import com.github.johnpersano.supertoasts.SuperActivityToast;
+import com.github.johnpersano.supertoasts.SuperCardToast;
 import com.michaelfotiadis.eventtriggeredskypecaller.R;
 import com.michaelfotiadis.eventtriggeredskypecaller.containers.CustomConstants;
 import com.michaelfotiadis.eventtriggeredskypecaller.utils.DataUtils;
@@ -74,7 +76,7 @@ public class WriteNFCActivity extends Activity {
 			} else if (tech.equals("android.nfc.tech.Ndef")
 					|| tech.equals("android.nfc.tech.NdefFormatable")) {
 				ndef = true;
-
+			} else {
 			}
 		}
 		if (ultralight && nfcA && ndef) {
@@ -91,11 +93,56 @@ public class WriteNFCActivity extends Activity {
 	private boolean writeProtect = false;
 
 	protected TextView mReportTextView;
-	protected Button mCommitButton;
+
+	private SuperActivityToast mSuperActivityToast;
+
+	private final String TOAST_STRING_1 = "Please Touch an NFC Tag to the Device";
+
+	private final long VIBRATION_DURATION = 500;
+
+	private long THREAD_SLEEP_TIME = 2000;
+
+	protected void checkForNFCAdapter() {
+		if (mNfcAdapter != null) {
+
+			if (!mNfcAdapter.isEnabled()) {
+
+				LayoutInflater inflater = getLayoutInflater();
+				View dialoglayout = inflater.inflate(R.layout.activity_write_nfc,
+						(ViewGroup) findViewById(R.layout.activity_write_nfc));
+				new AlertDialog.Builder(this)
+				.setView(dialoglayout)
+				.setPositiveButton(
+						"Please Enable the Wireless Network",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface arg0,
+									int arg1) {
+								Intent setnfc = new Intent(
+										Settings.ACTION_WIRELESS_SETTINGS);
+								startActivity(setnfc);
+							}
+						})
+						.setOnCancelListener(
+								new DialogInterface.OnCancelListener() {
+
+									public void onCancel(DialogInterface dialog) {
+										finish(); // exit application if user
+										// cancels
+									}
+								}).create().show();
+
+			} else {
+				Logger.d(TAG, "NFC Scanning is Enabled");
+			}
+
+		} else {
+			ToastUtils.makeWarningToast(this, "Sorry, No NFC Adapter found.");
+		}
+	}
 
 	public void disableForegroundMode() {
 		Logger.d(TAG, "disableForegroundMode");
-
+		SuperActivityToast.cancelAllSuperActivityToasts();
 		mNfcAdapter.disableForegroundDispatch(this);
 	}
 
@@ -128,7 +175,7 @@ public class WriteNFCActivity extends Activity {
 					new NdefRecord[] {
 							rtdTextRecord,
 							NdefRecord
-									.createApplicationRecord("com.eratosthenes.eventtriggeredskypecaller") });
+							.createApplicationRecord("com.eratosthenes.eventtriggeredskypecaller") });
 		} else {
 			return new NdefMessage(new NdefRecord[] { rtdTextRecord });
 		}
@@ -142,7 +189,6 @@ public class WriteNFCActivity extends Activity {
 
 			message = "Tag is Writable";
 			Logger.d(TAG, message);
-			mReportTextView.append("\n" + message);
 
 			// check if tag is writable (to the extent that we can
 			if (writableTag(detectedTag)) {
@@ -151,11 +197,8 @@ public class WriteNFCActivity extends Activity {
 				message = (wr.getStatus() == 1 ? "Success: " : "Failed: ")
 						+ wr.getMessage();
 				Logger.d(TAG, message);
-				mReportTextView.append("\n" + message);
-
-				//ToastUtils.makeInfoToast(this, message);
-
-				sendResult(mMD5);
+				showProgressDialog(message);
+				
 
 			} else {
 				message = "This tag is not writable";
@@ -170,13 +213,7 @@ public class WriteNFCActivity extends Activity {
 
 	}
 
-	private void sendResult(String result) {
-		Logger.d(TAG, "Sending Result: " + result);
-		Intent returnIntent = new Intent();
-		returnIntent.putExtra(CustomConstants.EXTRA_RESULT, result);
-		setResult(RESULT_OK, returnIntent);
-		finish();
-	}
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -185,7 +222,6 @@ public class WriteNFCActivity extends Activity {
 
 		// Set the textview
 		mReportTextView = (TextView) findViewById(R.id.textViewNFCWriterTitle);
-		mCommitButton = (Button) findViewById(R.id.buttonCommitGDrive);
 
 		// initialize NFC
 		mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
@@ -196,9 +232,10 @@ public class WriteNFCActivity extends Activity {
 		if (extras != null) {
 			mSkype_Name = extras.getString(CustomConstants.EXTRA_PAYLOAD);
 			mMD5 = new DataUtils().getMd5(mSkype_Name);
-			mReportTextView.setText("Skype User Name : " + mSkype_Name);
-			mReportTextView.append("\n MD5 String : " + mMD5);
+			mReportTextView.setText("Registering NFC Tag for : " + mSkype_Name);
+			ToastUtils.makeProgressToast(this, mSuperActivityToast, TOAST_STRING_1 );
 		}
+
 	}
 
 	@Override
@@ -237,48 +274,7 @@ public class WriteNFCActivity extends Activity {
 		enableForegroundMode();
 	}
 
-	protected void checkForNFCAdapter() {
-		if (mNfcAdapter != null) {
-
-			if (!mNfcAdapter.isEnabled()) {
-
-				LayoutInflater inflater = getLayoutInflater();
-				View dialoglayout = inflater.inflate(R.layout.activity_write_nfc,
-						(ViewGroup) findViewById(R.layout.activity_write_nfc));
-				new AlertDialog.Builder(this)
-						.setView(dialoglayout)
-						.setPositiveButton(
-								"Please Enable the Wireless Network",
-								new DialogInterface.OnClickListener() {
-									public void onClick(DialogInterface arg0,
-											int arg1) {
-										Intent setnfc = new Intent(
-												Settings.ACTION_WIRELESS_SETTINGS);
-										startActivity(setnfc);
-									}
-								})
-						.setOnCancelListener(
-								new DialogInterface.OnCancelListener() {
-
-									public void onCancel(DialogInterface dialog) {
-										finish(); // exit application if user
-										// cancels
-									}
-								}).create().show();
-
-			} else {
-				Logger.d(TAG, "NFC Scanning is Enabled");
-			}
-
-		} else {
-			ToastUtils.makeWarningToast(this, "Sorry, No NFC Adapter found.");
-		}
-	}
-
 	private void readTag(Intent intent) {
-
-		mReportTextView.append("\nDetected NFC");
-
 		ToastUtils.makeInfoToast(this, "Tag Detected");
 
 		String message;
@@ -300,41 +296,69 @@ public class WriteNFCActivity extends Activity {
 							+ " records in message " + i;
 
 					Logger.d(TAG, message);
-					mReportTextView.append("\n" + message);
 
 					for (int k = 0; k < records.size(); k++) {
 						message = " Record #" + k + " is of class "
 								+ records.get(k).getClass().getSimpleName();
 						Logger.d(TAG, message);
-						mReportTextView.append("\n" + message);
 
 						Record record = records.get(k);
 
 						Logger.d(TAG, record.toString());
-						mReportTextView.append("\n" + record.toString());
 
 						if (record instanceof AndroidApplicationRecord) {
 							AndroidApplicationRecord aar = (AndroidApplicationRecord) record;
 
 							message = "Package is " + aar.getPackageName();
 							Logger.d(TAG, message);
-							mReportTextView.append("\n" + message);
 						}
 					}
 				} catch (Exception e) {
 					message = "Problem parsing message";
 					Logger.e(TAG, "\n" + message, e);
 				}
-
 			}
 		}
+	}
+
+	private void sendResult(String result) {
+		Logger.d(TAG, "Sending Result: " + result);
+		Intent returnIntent = new Intent();
+		returnIntent.putExtra(CustomConstants.EXTRA_RESULT, result);
+		setResult(RESULT_OK, returnIntent);
+		finish();
+	}
+
+	private void showProgressDialog(final String message) {
+		// Cancel all SuperCardToasts already showing
+		SuperCardToast.cancelAllSuperCardToasts();
+
+		// Create a progress dialogue
+		final ProgressDialog progressDialogue = ProgressDialog.show(WriteNFCActivity.this, "NFC Tag Found", 
+				message);
+
+		// start a new thread to process job
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(THREAD_SLEEP_TIME);
+					progressDialogue.cancel();
+					sendResult(mMD5);
+				} catch (InterruptedException e) {
+					progressDialogue.cancel();
+					Logger.e(TAG, e.getLocalizedMessage());
+				}
+			}
+		});
+		t.start();
 	}
 
 	private void vibrate() {
 		Logger.d(TAG, "vibrate");
 
 		Vibrator vibe = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-		vibe.vibrate(500);
+		vibe.vibrate(VIBRATION_DURATION);
 	}
 
 	private boolean writableTag(Tag tag) {
@@ -344,7 +368,7 @@ public class WriteNFCActivity extends Activity {
 			if (ndef != null) {
 				ndef.connect();
 				if (!ndef.isWritable()) {
-					ToastUtils.makeWarningToast(this, "Tag is read-only.");
+					ToastUtils.makeWarningToast(this, "Tag is Read-Only.");
 
 					ndef.close();
 					return false;
@@ -353,7 +377,8 @@ public class WriteNFCActivity extends Activity {
 				return true;
 			}
 		} catch (Exception e) {
-			ToastUtils.makeWarningToast(this, "Failed to read tag");
+			Logger.e(TAG, e.getLocalizedMessage());
+			ToastUtils.makeWarningToast(this, "Failed to Read Tag");
 		}
 
 		return false;
@@ -370,7 +395,6 @@ public class WriteNFCActivity extends Activity {
 
 				if (!ndef.isWritable()) {
 					return new WriteResponse(0, "Tag is read-only");
-
 				}
 				if (ndef.getMaxSize() < size) {
 					messsage = "Tag capacity is " + ndef.getMaxSize()
@@ -381,7 +405,7 @@ public class WriteNFCActivity extends Activity {
 				ndef.writeNdefMessage(message);
 				if (writeProtect)
 					ndef.makeReadOnly();
-				messsage = "Wrote message to pre-formatted tag.";
+				messsage = "Tag Written Successfully";
 				return new WriteResponse(1, messsage);
 			} else {
 				NdefFormatable format = NdefFormatable.get(tag);
@@ -389,19 +413,21 @@ public class WriteNFCActivity extends Activity {
 					try {
 						format.connect();
 						format.format(message);
-						messsage = "Formatted tag and wrote message";
+						messsage = "Tag Formatted and Written Successfully";
 						return new WriteResponse(1, messsage);
 					} catch (IOException e) {
-						messsage = "Failed to format tag.";
+						messsage = "Failed to Format Tag";
+						Logger.e(TAG, e.getLocalizedMessage());
 						return new WriteResponse(0, messsage);
 					}
 				} else {
-					messsage = "Tag doesn't support NDEF.";
+					messsage = "Tag does not support NDEF";
 					return new WriteResponse(0, messsage);
 				}
 			}
 		} catch (Exception e) {
 			messsage = "Failed to write tag";
+			Logger.e(TAG, e.getLocalizedMessage());
 			return new WriteResponse(0, messsage);
 		}
 	}

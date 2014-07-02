@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.Pair;
 import android.view.View;
 import android.widget.AdapterView;
@@ -15,6 +16,9 @@ import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 
+import com.github.johnpersano.supertoasts.SuperActivityToast;
+import com.github.johnpersano.supertoasts.SuperToast;
+import com.github.johnpersano.supertoasts.util.OnClickWrapper;
 import com.michaelfotiadis.eventtriggeredskypecaller.R;
 import com.michaelfotiadis.eventtriggeredskypecaller.containers.CustomConstants;
 import com.michaelfotiadis.eventtriggeredskypecaller.containers.CustomInfoAdapter;
@@ -56,7 +60,8 @@ public class ListDisplayActivity extends Activity implements
 		mContactListView.setOnItemLongClickListener(this);
 
 	}
-
+	private int mSelectionPosition;
+	
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View view, int position,
 			long id) {
@@ -64,10 +69,48 @@ public class ListDisplayActivity extends Activity implements
 		sb.append(contactList.get(position).getContactDevice());
 		sb.append(CustomConstants.LINE_SEPARATOR);
 		sb.append(contactList.get(position).getDeviceID());
-		ToastUtils.makeInfoToast(this, sb.toString());
 
+		mSelectionPosition = position;
+		
+		SuperActivityToast.cancelAllSuperActivityToasts();
+		
+		SuperActivityToast superActivityToast = new SuperActivityToast(this,  SuperToast.Type.BUTTON);
+		superActivityToast.setDuration(SuperToast.Duration.LONG);
+		superActivityToast.setText(sb.toString());
+		superActivityToast.setButtonIcon(SuperToast.Icon.Dark.EXIT, "DELETE");
+		superActivityToast.setOnClickWrapper(onClickWrapper);
+		superActivityToast.show();
+		
 	}
+	
+	OnClickWrapper onClickWrapper = new OnClickWrapper("SuperActivityToast", new SuperToast.OnClickListener() {
 
+	    @Override
+	    public void onClick(View view, Parcelable token) {
+
+	    	AlertDialog.Builder adb = new AlertDialog.Builder(ListDisplayActivity.this);
+			adb.setTitle("Delete?");
+			adb.setMessage("Are you sure you want to delete this entry?");
+			adb.setNegativeButton("Cancel", null);
+			adb.setPositiveButton("Ok", new AlertDialog.OnClickListener() {
+				public void onClick(DialogInterface dialog, int which) {
+
+					// drop it from our list
+					contactList.remove(mSelectionPosition);
+					// update the contents of the configuration file
+					new FileUtils().updateConfigFile(ListDisplayActivity.this, contactList);
+
+					// let the adapter know that the contents have changed
+					mListAdapter.notifyDataSetChanged();
+					// re-populate it
+					populateAdapter();
+				}
+			});
+			adb.show();
+	    }
+	});
+	
+	
 	@Override
 	public boolean onItemLongClick(AdapterView<?> arg0, View v, int position,
 			long id) {

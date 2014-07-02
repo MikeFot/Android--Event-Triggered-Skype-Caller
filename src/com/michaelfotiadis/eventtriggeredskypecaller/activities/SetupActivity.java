@@ -50,17 +50,6 @@ public class SetupActivity extends SensorBaseActivity implements OnItemSelectedL
 	private boolean isDeviceSetUp = false;
 	private boolean isUserNameSetUp = false;
 
-	@SuppressWarnings("unchecked")
-	private void startListDisplayActivity() {
-		if (mContactList.size() > 0) {
-			Intent intent = new Intent(this, ListDisplayActivity.class);
-			intent.putParcelableArrayListExtra(CustomConstants.EXTRA_PAYLOAD, (ArrayList<? extends Parcelable>) mContactList);
-			startActivity(intent);
-		} else {
-			ToastUtils.makeWarningToast(this, mToastString3);
-		}
-	}
-
 	/**
 	 * Handles Results from other Activities
 	 */
@@ -84,7 +73,7 @@ public class SetupActivity extends SensorBaseActivity implements OnItemSelectedL
 				mSetupDeviceButton.setText(R.string.label_button_setup_device);
 			}
 			if (resultCode == RESULT_CANCELED) {
-				Logger.d(TAG, "Operation cancelled. No result returned.");
+				Logger.d(TAG, "Operation cancelled");
 			}
 		} else if (requestCode == CustomConstants.REQUEST_CODE_2) {
 			if (resultCode == RESULT_OK) {
@@ -95,7 +84,7 @@ public class SetupActivity extends SensorBaseActivity implements OnItemSelectedL
 				mSetupDeviceButton.setText("Using NFC Tag");
 
 				Logger.d(TAG, "Result returned : " + mDeviceID);
-				ToastUtils.makeInfoToast(this, "Result returned : " + mDeviceID);
+				ToastUtils.makeInfoToast(this, "Device Registered : NFC " + mDeviceID);
 				isDeviceSetUp = true;
 			}
 			if (resultCode == RESULT_CANCELED) {
@@ -111,16 +100,16 @@ public class SetupActivity extends SensorBaseActivity implements OnItemSelectedL
 				mDeviceID = data.getStringExtra(CustomConstants.EXTRA_RESULT);
 
 				mDeviceType = DeviceType.IBEACON.getString();
-				mSetupDeviceButton.setText("Using IBeacon Tag");
+				mSetupDeviceButton.setText("Using iBeacon Tag");
 
 				Logger.d(TAG, "Result returned : " + mDeviceID);
-				ToastUtils.makeInfoToast(this, "Result returned : " + mDeviceID);
+				ToastUtils.makeInfoToast(this, "Device Registered : iBeacon " + mDeviceID);
 				isDeviceSetUp = true;
 			}
 			if (resultCode == RESULT_CANCELED) {
 				// consider device not set up if you get a cancelled code
 				Logger.d(TAG, "Operation cancelled. No result returned.");
-				ToastUtils.makeWarningToast(this, "No result returned");
+				ToastUtils.makeWarningToast(this, "No Device Registered");
 				isDeviceSetUp = false;
 				mSetupDeviceButton.setText(R.string.label_button_setup_device);
 			}
@@ -142,7 +131,7 @@ public class SetupActivity extends SensorBaseActivity implements OnItemSelectedL
 	public void onClickCommitSetup(View view) {
 
 		if (!isDeviceSetUp || !isUserNameSetUp) {
-			ToastUtils.makeWarningToast(this, "Setup Not Complete. Please Select a Username and a Device");
+			ToastUtils.makeWarningToast(this, "Setup Not Complete. Please Select Both a Username and a Device.");
 			return;
 		}
 
@@ -153,6 +142,7 @@ public class SetupActivity extends SensorBaseActivity implements OnItemSelectedL
 		boolean isContactExisting = false;
 
 		Logger.d(TAG, "Commiting Results");
+		
 		for (EventContact contact : mContactList) {
 
 			if (contact.getContactName().equals(mNameResult)) {
@@ -285,11 +275,11 @@ public class SetupActivity extends SensorBaseActivity implements OnItemSelectedL
 		Logger.d(TAG, "Spinner Selection at position " + pos);
 		mActionType = parent.getItemAtPosition(pos).toString();
 	}
+
 	@Override
 	public void onNothingSelected(AdapterView<?> arg0) {
 		Logger.d(TAG, "No Item Selected");
 	}
-
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// same as using a normal menu
@@ -300,6 +290,17 @@ public class SetupActivity extends SensorBaseActivity implements OnItemSelectedL
 			break;
 		}
 		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void startListDisplayActivity() {
+		if (mContactList.size() > 0) {
+			Intent intent = new Intent(this, ListDisplayActivity.class);
+			intent.putParcelableArrayListExtra(CustomConstants.EXTRA_PAYLOAD, (ArrayList<? extends Parcelable>) mContactList);
+			startActivity(intent);
+		} else {
+			ToastUtils.makeWarningToast(this, mToastString3);
+		}
 	}
 
 	private void startMainActivity() {

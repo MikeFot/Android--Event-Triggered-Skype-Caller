@@ -11,6 +11,4 @@ public class MyApp extends Application {
 		Logger.i(TAG, "MyApp Context Created");
 		super.onCreate();
 	}
-	
-	
 }

@@ -74,6 +74,7 @@ public class SkypeUtils {
 			myPackageMgr.getPackageInfo("com.skype.raider",
 					PackageManager.GET_ACTIVITIES);
 		} catch (PackageManager.NameNotFoundException e) {
+			Logger.e(TAG, e.getLocalizedMessage());
 			return (false);
 		}
 		return (true);

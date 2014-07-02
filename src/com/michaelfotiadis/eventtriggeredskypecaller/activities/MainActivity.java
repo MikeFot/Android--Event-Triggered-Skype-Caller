@@ -8,6 +8,7 @@ import uk.co.alt236.bluetoothlelib.util.IBeaconUtils;
 import uk.co.alt236.bluetoothlelib.util.IBeaconUtils.IBeaconDistanceDescriptor;
 import android.app.ActionBar;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -31,6 +32,7 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import com.github.johnpersano.supertoasts.SuperActivityToast;
+import com.github.johnpersano.supertoasts.SuperCardToast;
 import com.michaelfotiadis.eventtriggeredskypecaller.R;
 import com.michaelfotiadis.eventtriggeredskypecaller.containers.CustomConstants;
 import com.michaelfotiadis.eventtriggeredskypecaller.containers.DeviceType;
@@ -128,7 +130,7 @@ InterfaceDialogListener {
 
 							for (EventContact contact : getContactList()) {
 								if (contact.getDeviceID().equals(result)) {
-									
+
 									processScanResult(contact, DeviceType.IBEACON);
 									break;
 								}
@@ -141,14 +143,17 @@ InterfaceDialogListener {
 		}
 	};
 
-	
 
-	
+
+
+	private final int THREAD_SLEEP_TIME = 2000;
+
 	protected void checkForConfigFile() {
 		mSuperActivityToast = ToastUtils.makeProgressToast(this,
 				mSuperActivityToast, mToastString2);
 		mFileUtils = new FileUtils();
 
+		// This is here for debugging
 		// boolean isFileDeleted = mFileUtils.deleteConfigFile();
 		// Logger.d(TAG, "Did I delete Config File? " + isFileDeleted);
 
@@ -169,7 +174,7 @@ InterfaceDialogListener {
 
 		}
 	}
-	
+
 	/**
 	 * Method which checks for Skype installation on the local device and
 	 * prompts to open the market if none is present
@@ -223,6 +228,11 @@ InterfaceDialogListener {
 		mBluetoothUtils = new BluetoothUtils(this);
 		mScanner = new BluetoothLeScanner(this, mLeScanCallback, mBluetoothUtils);
 
+		if (!mBluetoothUtils.isBluetoothLeSupported()) {
+			ToastUtils.makeWarningToast(this, "BlueTooth LE is not supported by your device");
+			return;
+		}
+		
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
@@ -231,7 +241,6 @@ InterfaceDialogListener {
 				if (mBluetoothUtils.isBluetoothOn()
 						&& mBluetoothUtils.isBluetoothLeSupported()) {
 					Logger.i(TAG, "Starting Scan");
-					
 					mScanner.scanLeDevice(TARGET_SCAN_DURATION, true);
 				} else {
 					mIBeaconToggleButton.performClick();
@@ -268,14 +277,16 @@ InterfaceDialogListener {
 
 	@Override
 	public void onClickCall(android.support.v4.app.DialogFragment dialog) {
-
+		ToastUtils.makeInfoToast(MainActivity.this, "Starting Skype");
 		new SkypeUtils().startSkypeAction(this, mSkypeUserName,
 				SkypeAction.CALL.getString());
+		
 
 	}
 
 	@Override
 	public void onClickChat(android.support.v4.app.DialogFragment dialog) {
+		ToastUtils.makeInfoToast(MainActivity.this, "Starting Skype");
 		new SkypeUtils().startSkypeAction(this, mSkypeUserName,
 				SkypeAction.CHAT.getString());
 	}
@@ -283,7 +294,6 @@ InterfaceDialogListener {
 	@Override
 	public void onClickIBeacon(DialogFragment dialog) {
 		// Do Nothing
-
 	}
 
 	@Override
@@ -336,6 +346,7 @@ InterfaceDialogListener {
 
 	@Override
 	public void onClickVideoCall(android.support.v4.app.DialogFragment dialog) {
+		ToastUtils.makeInfoToast(MainActivity.this, "Starting Skype");
 		new SkypeUtils().startSkypeAction(this, mSkypeUserName,
 				SkypeAction.VIDEO_CALL.getString());
 	}
@@ -431,6 +442,8 @@ InterfaceDialogListener {
 	@Override
 	protected void onPause() {
 		super.onPause();
+		// Cancel all toasts currently showing
+		SuperActivityToast.cancelAllSuperActivityToasts();
 		disableBluetoothScan();
 		removeReceivers();
 	}
@@ -439,6 +452,10 @@ InterfaceDialogListener {
 	protected void onResume() {
 		super.onResume();
 		checkForConfigFile();
+
+		// Cancel all toasts currently showing
+		SuperActivityToast.cancelAllSuperActivityToasts();
+
 		if (mNfcToggleButton.isChecked()) {
 			enableNFCForegroundMode();
 		}
@@ -453,38 +470,17 @@ InterfaceDialogListener {
 	}
 
 	public void processScanResult(EventContact contact, DeviceType deviceType) {
-		
+
 		if (deviceType == DeviceType.IBEACON) {
-			ToastUtils.makeInfoToast(this, "IBeacon Device Found");
-		} else if (deviceType == DeviceType.NFC) {
-			ToastUtils.makeInfoToast(this, "NFC Tag Found");
+			mIBeaconToggleButton.performClick();
 		}
-		
+
 		Logger.d(TAG, "Device ID matches contact "
 				+ contact.getContactName());
-
-		mSkypeUserName = contact.getContactName();
-
 		Logger.d(TAG, "Action is "+ contact.getContactAction());
-
-		// Start a dialog fragment if action is prompt user
-		if (contact.getContactAction().equals(SkypeAction.PROMPT_USER
-				.getString())) {
-			Logger.d(TAG, "Prompting User");
-			// Switch off scanning
-			if (deviceType == DeviceType.IBEACON) {
-				mIBeaconToggleButton.performClick();
-			}
-			
-			new SkypeActionDialogFragment().show(getSupportFragmentManager(), TAG_ACTION_PICKER);
-
-		} else {
-			// Start the registered action otherwise switch off scanning
-			if (deviceType == DeviceType.IBEACON) {
-				mIBeaconToggleButton.performClick();
-			}
-			mSkypeUtilities.startSkypeAction(this, mSkypeUserName, contact.getContactAction());
-		}
+		mSkypeUserName = contact.getContactName();
+		// Start the progress dialog
+		showSkypeInitProgressDialog(deviceType, contact.getContactName(), contact.getContactAction());
 	}
 
 	protected void removeReceivers() {
@@ -544,6 +540,41 @@ InterfaceDialogListener {
 
 			}
 		});
+	}
+
+	private void showSkypeInitProgressDialog(DeviceType deviceType, final String skypeUserName, final String action) {
+		// Cancel all SuperCardToasts already showing
+		SuperCardToast.cancelAllSuperCardToasts();
+
+		// Create a progress dialogue
+		final ProgressDialog progressDialogue = ProgressDialog.show(MainActivity.this, "Found: " + deviceType, 
+				"User: " + skypeUserName + CustomConstants.LINE_SEPARATOR + 
+				"Action: " + action);
+
+		// start a new thread to process job
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(THREAD_SLEEP_TIME);
+					
+					if (action.equals(SkypeAction.PROMPT_USER
+							.getString())) {
+						Logger.d(TAG, "Prompting User");
+						new SkypeActionDialogFragment().show(getSupportFragmentManager(), TAG_ACTION_PICKER);
+					} else {
+						ToastUtils.makeInfoToast(MainActivity.this, "Starting Skype");
+						mSkypeUtilities.startSkypeAction(MainActivity.this, skypeUserName, action);
+					}
+					progressDialogue.cancel();
+				} catch (InterruptedException e) {
+					progressDialogue.cancel();
+					Logger.e(TAG, e.getLocalizedMessage());
+				}
+			}
+
+		});
+		t.start();
 	}
 
 	@SuppressWarnings("unchecked")

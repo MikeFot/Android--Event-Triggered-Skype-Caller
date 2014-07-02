@@ -14,7 +14,7 @@
     </string-array>
     <string-array name="array_devices">
         <item>NFC Tag</item>
-        <item>IBeacon</item>
+        <item>iBeacon</item>
     </string-array>
 
 </resources>
