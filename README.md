@@ -14,4 +14,6 @@ https://github.com/alt236/Bluetooth-LE-Library---Android
 ##Target Platforms
 Android devices running OS version 18+ and which can support receiving of Bluetooth LE signal.
 
+The code in this project is licensed under the Apache Software License 2.0.
+
 
